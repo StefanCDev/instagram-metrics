@@ -1,47 +1,45 @@
-const fetch = require('node-fetch');
+require('dotenv').config(); // Load environment variables from .env
 
-// Define your Instagram account ID and access token
-const accountId = "17841465989170608";
-const accessToken = "IGQWRNWkVaaUFVeFJVLXJiUWhxM0dIa3h6RDRYeGhLYXcxWlh5d3hvRmQzZAkxCTDlaTFhNelZA4LW5MYkJvY0ZAUYnlZAa0syRWNOYzFneHQ0NjdOell1anQyNEc2bDJuSl91U01NVkRsSFg2N1dzVWkxejdqMmowZAzgZD";
+// Fetch Followers Count
+async function fetchFollowersCount() {
+  const accessToken = process.env.IG_ACCESS_TOKEN;
+  const userId = process.env.IG_USER_ID;
+  const url = `https://graph.instagram.com/v17.0/${userId}?fields=followers_count&access_token=${accessToken}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log('Followers Count:', data.followers_count);
+  } catch (error) {
+    console.error('Error fetching followers count:', error);
+  }
+}
 
-// Function to fetch media details
-const fetchMediaDetails = async () => {
-    const mediaUrl = `https://graph.instagram.com/v17.0/${accountId}/media?fields=id,like_count,comments_count,media_type,media_url&access_token=${accessToken}`;
+// Fetch Media Data without media_url and calculate total like_count and comments_count
+async function fetchMediaData() {
+  const accessToken = process.env.IG_ACCESS_TOKEN;
+  const userId = process.env.IG_USER_ID;
+  const url = `https://graph.instagram.com/v17.0/${userId}/media?fields=id,like_count,comments_count,media_type&access_token=${accessToken}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
     
-    try {
-        const response = await fetch(mediaUrl);
-        return await response.json();
-    } catch (error) {
-        throw new Error("Error fetching media details: " + error.message);
-    }
-};
+    let totalLikes = 0;
+    let totalComments = 0;
+    data.data.forEach(item => {
+      totalLikes += item.like_count || 0;
+      totalComments += item.comments_count || 0;
+    });
 
-// Function to fetch follower count
-const fetchFollowerCount = async () => {
-    const followerUrl = `https://graph.instagram.com/v17.0/${accountId}?fields=followers_count&access_token=${accessToken}`;
-    
-    try {
-        const response = await fetch(followerUrl);
-        return await response.json();
-    } catch (error) {
-        throw new Error("Error fetching follower count: " + error.message);
-    }
-};
+    console.log('Media Data (without media_url):', data.data);
+    console.log('Total Likes:', totalLikes);
+    console.log('Total Comments:', totalComments);
+  } catch (error) {
+    console.error('Error fetching media data:', error);
+  }
+}
 
-// The main function that Netlify will execute
-exports.handler = async function(event, context) {
-    try {
-        const mediaData = await fetchMediaDetails();
-        const followersData = await fetchFollowerCount();
-        
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ mediaData, followersData }),
-        };
-    } catch (error) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message }),
-        };
-    }
-};
+// Call the functions
+fetchFollowersCount();
+fetchMediaData();
